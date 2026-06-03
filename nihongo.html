@@ -32,11 +32,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 /* Kana Grid */
 .kana-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
-.kana-cell{background:#fff;border:1px solid #eee;border-radius:8px;padding:8px 4px;text-align:center;cursor:pointer;transition:all .2s}
+.kana-cell{background:#fff;border:1px solid #eee;border-radius:8px;padding:8px 4px;text-align:center;cursor:pointer;transition:all .2s;position:relative}
 .kana-cell:active{transform:scale(.95);background:#fce4ec}
 .kana-cell .char{font-size:22px;font-weight:500;color:#333}
 .kana-cell .romaji{font-size:10px;color:#999;margin-top:2px}
 .kana-cell.known .char{color:#4caf50}
+.kana-cell .mark-dot{position:absolute;top:3px;right:3px;width:14px;height:14px;border-radius:50%;border:1.5px solid #ddd;background:#fff;transition:all .2s;z-index:2}
+.kana-cell.known .mark-dot{background:#4caf50;border-color:#4caf50}
+.kana-cell .mark-dot::after{content:'';position:absolute;top:2px;left:4px;width:4px;height:7px;border:solid #fff;border-width:0 1.5px 1.5px 0;transform:rotate(45deg);opacity:0;transition:opacity .2s}
+.kana-cell.known .mark-dot::after{opacity:1}
 .kana-filter{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
 .kana-filter span{padding:5px 12px;border-radius:14px;font-size:12px;background:#eee;cursor:pointer;transition:all .2s}
 .kana-filter span.active{background:#e53935;color:#fff}
@@ -113,9 +117,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .speak-btn:active{background:#e53935;transform:scale(.9)}
 .speak-btn.speaking{background:#e53935;animation:pulse .6s infinite}
 @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
-.kana-cell{position:relative}
-.kana-cell .speak-btn{position:absolute;top:2px;right:2px;width:20px;height:20px;font-size:10px;opacity:0;transition:opacity .2s}
-.kana-cell:active .speak-btn,.kana-cell:hover .speak-btn{opacity:1}
+
 .word-item .speak-btn{width:26px;height:26px;font-size:12px}
 .grammar-item .speak-btn{width:24px;height:24px;font-size:11px;vertical-align:middle}
 .jp-text-wrap{display:flex;align-items:center;gap:6px}
@@ -354,7 +356,7 @@ function renderKanaGrid() {
   var h = '';
   items.forEach(function(k) {
     var cls = state.knownKana.indexOf(k.char) >= 0 ? ' known' : '';
-    h += '<div class="kana-cell'+cls+'" onclick="toggleKana(\''+k.char+'\',this)"><div class="char">'+k.char+'</div><div class="romaji">'+k.romaji+'</div><button class="speak-btn" onclick="event.stopPropagation();speak(\''+k.char+'\',this)" title="发音">&#9654;</button></div>';
+    h += '<div class="kana-cell'+cls+'" onclick="speak(\''+k.char+'\',this)"><div class="char">'+k.char+'</div><div class="romaji">'+k.romaji+'</div><div class="mark-dot" onclick="event.stopPropagation();toggleKana(\''+k.char+'\',this.parentElement)" title="标记已学"></div></div>';
   });
   document.getElementById('kanaGrid').innerHTML = h;
 }
@@ -363,6 +365,9 @@ function toggleKana(ch, el) {
   if (idx >= 0) { state.knownKana.splice(idx,1); el.classList.remove('known'); }
   else { state.knownKana.push(ch); el.classList.add('known'); }
   saveState(state);
+}
+function speakKana(ch, el) {
+  speak(ch, el);
 }
 
 // ========== WORDS & GRAMMAR ==========
