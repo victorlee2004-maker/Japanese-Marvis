@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="日语学习">
+<meta name="theme-color" content="#e53935">
+<title>日语学习 - 从零到N3</title>
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjogIlx1NjVlNVx1OGJlZFx1NWI2Nlx1NGU2MCIsICJzaG9ydF9uYW1lIjogIlx1NjVlNVx1OGJlZFx1NWI2Nlx1NGU2MCIsICJzdGFydF91cmwiOiAiLiIsICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLCAiYmFja2dyb3VuZF9jb2xvciI6ICIjZjVmNWY1IiwgInRoZW1lX2NvbG9yIjogIiNlNTM5MzUiLCAiaWNvbnMiOiBbXX0=">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;color:#333;max-width:480px;margin:0 auto;min-height:100vh;padding-bottom:70px;-webkit-tap-highlight-color:transparent;user-select:none}
+.header{background:linear-gradient(135deg,#e53935,#c62828);color:#fff;padding:16px 20px;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.header h1{font-size:18px;font-weight:600}
+.header .streak{font-size:13px;opacity:.9;background:rgba(255,255,255,.15);padding:4px 10px;border-radius:12px}
+.page{display:none;padding:16px;animation:fadeIn .3s}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* Nav */
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;display:flex;border-top:1px solid #e0e0e0;z-index:100;box-shadow:0 -2px 8px rgba(0,0,0,.05)}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 0;color:#999;font-size:11px;cursor:pointer;transition:color .2s}
+.nav-item.active{color:#e53935}
+.nav-item .icon{font-size:22px;margin-bottom:2px}
+
+/* Cards */
+.card{background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.card h3{font-size:15px;margin-bottom:8px;color:#333}
+.card .sub{font-size:12px;color:#999;margin-bottom:8px}
+
+/* Kana Grid */
+.kana-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.kana-cell{background:#fff;border:1px solid #eee;border-radius:8px;padding:8px 4px;text-align:center;cursor:pointer;transition:all .2s}
+.kana-cell:active{transform:scale(.95);background:#fce4ec}
+.kana-cell .char{font-size:22px;font-weight:500;color:#333}
+.kana-cell .romaji{font-size:10px;color:#999;margin-top:2px}
+.kana-cell.known .char{color:#4caf50}
+.kana-filter{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.kana-filter span{padding:5px 12px;border-radius:14px;font-size:12px;background:#eee;cursor:pointer;transition:all .2s}
+.kana-filter span.active{background:#e53935;color:#fff}
+
+/* Word List */
+.word-item{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #f0f0f0}
+.word-item:last-child{border-bottom:none}
+.word-jp{font-size:16px;color:#333}
+.word-kana{font-size:12px;color:#999;margin-left:8px}
+.word-cn{font-size:14px;color:#666}
+.word-type{font-size:10px;color:#fff;background:#e53935;padding:2px 6px;border-radius:4px}
+
+/* Grammar */
+.grammar-item{background:#fff;border-radius:10px;padding:14px;margin-bottom:10px;border-left:3px solid #e53935}
+.grammar-item .pattern{font-size:16px;color:#e53935;font-weight:500;margin-bottom:4px}
+.grammar-item .meaning{font-size:14px;color:#333;margin-bottom:6px}
+.grammar-item .ex-jp{font-size:14px;color:#555;margin-bottom:2px}
+.grammar-item .ex-cn{font-size:12px;color:#999}
+.grammar-item .note{font-size:11px;color:#888;margin-top:4px;font-style:italic}
+
+/* Flashcard */
+.flashcard-container{display:flex;flex-direction:column;align-items:center;padding:10px 0}
+.flashcard{width:100%;max-width:320px;height:200px;perspective:1000px;cursor:pointer;margin-bottom:20px}
+.flashcard-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d}
+.flashcard.flipped .flashcard-inner{transform:rotateY(180deg)}
+.flashcard-front,.flashcard-back{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;box-shadow:0 4px 16px rgba(0,0,0,.1)}
+.flashcard-front{background:linear-gradient(135deg,#fff,#fafafa)}
+.flashcard-back{background:linear-gradient(135deg,#e53935,#c62828);color:#fff;transform:rotateY(180deg)}
+.flashcard-front .card-jp{font-size:42px;font-weight:600;color:#e53935;margin-bottom:8px}
+.flashcard-front .card-kana{font-size:18px;color:#999}
+.flashcard-back .card-cn{font-size:28px;font-weight:500;margin-bottom:8px}
+.flashcard-back .card-kana-back{font-size:16px;opacity:.8}
+.flashcard-actions{display:flex;gap:20px;width:100%;max-width:320px}
+.btn-forgot,.btn-known{flex:1;padding:14px;border:none;border-radius:10px;font-size:15px;font-weight:500;cursor:pointer;transition:all .2s}
+.btn-forgot{background:#ffcdd2;color:#c62828}
+.btn-known{background:#c8e6c9;color:#2e7d32}
+.btn-forgot:active{background:#ef9a9a}
+.btn-known:active{background:#a5d6a7}
+.flashcard-progress{width:100%;max-width:320px;margin-bottom:12px;text-align:center;font-size:13px;color:#999}
+
+/* Dialogues */
+.dialogue-scene{background:#fff;border-radius:12px;overflow:hidden;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.dialogue-scene .scene-header{padding:12px 16px;background:#fafafa;border-bottom:1px solid #eee;font-size:14px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.dialogue-scene .scene-header .level-tag{font-size:11px;background:#e53935;color:#fff;padding:2px 8px;border-radius:10px}
+.dialogue-line{padding:12px 16px;border-bottom:1px solid #f5f5f5;display:flex;gap:10px}
+.dialogue-line:last-child{border-bottom:none}
+.dialogue-line .speaker{font-size:11px;color:#e53935;min-width:36px;font-weight:500}
+.dialogue-line .content{flex:1}
+.dialogue-line .jp-text{font-size:15px;color:#333;margin-bottom:3px}
+.dialogue-line .cn-text{font-size:12px;color:#999}
+
+/* Me page */
+.stat-row{display:flex;gap:10px;margin-bottom:12px}
+.stat-box{flex:1;background:#fff;border-radius:12px;padding:16px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.stat-box .num{font-size:28px;font-weight:700;color:#e53935}
+.stat-box .label{font-size:12px;color:#999;margin-top:4px}
+.reminder-box{background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.reminder-box h3{font-size:15px;margin-bottom:12px}
+.reminder-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0}
+.reminder-row .time-input{border:1px solid #ddd;border-radius:8px;padding:8px 12px;font-size:14px;width:120px}
+.reminder-row .toggle{width:48px;height:28px;background:#ccc;border-radius:14px;position:relative;cursor:pointer;transition:background .3s}
+.reminder-row .toggle.on{background:#4caf50}
+.reminder-row .toggle::after{content:'';position:absolute;width:24px;height:24px;background:#fff;border-radius:50%;top:2px;left:2px;transition:left .3s}
+.reminder-row .toggle.on::after{left:22px}
+.level-selector{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.level-selector span{padding:6px 14px;border-radius:14px;font-size:12px;background:#eee;cursor:pointer;transition:all .2s}
+.level-selector span.active{background:#e53935;color:#fff}
+
+.install-hint{background:#fff3e0;border:1px solid #ffe0b2;border-radius:10px;padding:12px;margin-bottom:16px;font-size:13px;color:#e65100;text-align:center;line-height:1.6}
+.install-hint b{display:block;margin-top:4px}
+
+/* Speak button */
+.speak-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#f5f5f5;border:none;cursor:pointer;font-size:14px;transition:all .15s;flex-shrink:0;margin-left:4px}
+.speak-btn:active{background:#e53935;transform:scale(.9)}
+.speak-btn.speaking{background:#e53935;animation:pulse .6s infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+.kana-cell{position:relative}
+.kana-cell .speak-btn{position:absolute;top:2px;right:2px;width:20px;height:20px;font-size:10px;opacity:0;transition:opacity .2s}
+.kana-cell:active .speak-btn,.kana-cell:hover .speak-btn{opacity:1}
+.word-item .speak-btn{width:26px;height:26px;font-size:12px}
+.grammar-item .speak-btn{width:24px;height:24px;font-size:11px;vertical-align:middle}
+.jp-text-wrap{display:flex;align-items:center;gap:6px}
+.flashcard-front .speak-btn{position:absolute;bottom:12px;right:12px;width:32px;height:32px;font-size:16px;background:rgba(229,57,53,.1)}
+
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>日语学习</h1>
+  <span class="streak" id="streakBadge">连续 0 天</span>
+</div>
+
+<!-- Page: Learn -->
+<div class="page active" id="page-learn">
+  <div class="install-hint" id="installHint">
+    添加到手机主屏幕，像 App 一样使用<br><b>iOS: Safari 分享按钮 → 添加到主屏幕</b><b>Android: Chrome 菜单 → 添加到主屏幕</b>
+  </div>
+  <div class="level-selector" id="levelSelector"></div>
+  <div class="card">
+    <h3>五十音图</h3>
+    <div class="kana-filter" id="kanaFilter"></div>
+    <div class="kana-grid" id="kanaGrid"></div>
+  </div>
+  <div class="card" id="wordCard">
+    <h3>单词</h3>
+    <div class="sub" id="wordCount"></div>
+    <div id="wordList"></div>
+  </div>
+  <div class="card" id="grammarCard">
+    <h3>语法</h3>
+    <div id="grammarList"></div>
+  </div>
+</div>
+
+<!-- Page: Flashcard -->
+<div class="page" id="page-flashcard">
+  <div class="level-selector" id="flashLevelSelector"></div>
+  <div class="flashcard-container">
+    <div class="flashcard-progress" id="flashProgress"></div>
+    <div class="flashcard" id="flashcard" onclick="flipCard()">
+      <div class="flashcard-inner">
+        <div class="flashcard-front">
+          <div class="card-jp" id="cardJp"></div>
+          <div class="card-kana" id="cardKana"></div>
+          <button class="speak-btn" id="flashSpeakBtn" onclick="event.stopPropagation();speakFlash()" title="发音">&#9654;</button>
+        </div>
+        <div class="flashcard-back">
+          <div class="card-cn" id="cardCn"></div>
+          <div class="card-kana-back" id="cardKanaBack"></div>
+        </div>
+      </div>
+    </div>
+    <div class="flashcard-actions">
+      <button class="btn-forgot" onclick="answerCard(false)">不认识</button>
+      <button class="btn-known" onclick="answerCard(true)">认识</button>
+    </div>
+  </div>
+  <div class="card" style="text-align:center;margin-top:16px">
+    <div style="font-size:14px;color:#333;margin-bottom:4px">本次背诵统计</div>
+    <div style="display:flex;justify-content:center;gap:24px">
+      <div><span style="color:#4caf50;font-size:20px;font-weight:700" id="knownCount">0</span><br><span style="font-size:11px;color:#999">认识</span></div>
+      <div><span style="color:#e53935;font-size:20px;font-weight:700" id="forgotCount">0</span><br><span style="font-size:11px;color:#999">不认识</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Page: Dialogue -->
+<div class="page" id="page-dialogue"></div>
+
+<!-- Page: Me -->
+<div class="page" id="page-me">
+  <div class="install-hint" id="installHint2">
+    添加到手机主屏幕，像 App 一样使用<br><b>iOS: Safari 分享按钮 → 添加到主屏幕</b><b>Android: Chrome 菜单 → 添加到主屏幕</b>
+  </div>
+  <div class="stat-row">
+    <div class="stat-box"><div class="num" id="statStreak">0</div><div class="label">连续学习天数</div></div>
+    <div class="stat-box"><div class="num" id="statWords">0</div><div class="label">已学单词</div></div>
+    <div class="stat-box"><div class="num" id="statCards">0</div><div class="label">今日背诵</div></div>
+  </div>
+  <div class="reminder-box">
+    <h3>每日学习提醒</h3>
+    <div class="reminder-row">
+      <span style="font-size:14px">提醒时间</span>
+      <input type="time" class="time-input" id="reminderTime" value="20:00">
+    </div>
+    <div class="reminder-row">
+      <span style="font-size:14px">开启提醒</span>
+      <div class="toggle" id="reminderToggle" onclick="toggleReminder()"></div>
+    </div>
+    <div style="font-size:11px;color:#999;margin-top:8px">需要浏览器通知权限，请允许通知</div>
+  </div>
+  <div class="card">
+    <h3>学习建议</h3>
+    <div style="font-size:13px;color:#666;line-height:1.8">
+      <p>每天坚持 20-30 分钟，推荐早晚各一次。</p>
+      <p>先背单词再学语法效果更好。</p>
+      <p>对话部分大声朗读，锻炼语感。</p>
+      <p>遇到不认识的单词加入背诵，反复练习。</p>
+    </div>
+  </div>
+</div>
+
+<div class="nav">
+  <div class="nav-item active" data-page="learn"><span class="icon">📖</span>学习</div>
+  <div class="nav-item" data-page="flashcard"><span class="icon">🃏</span>背诵</div>
+  <div class="nav-item" data-page="dialogue"><span class="icon">💬</span>对话</div>
+  <div class="nav-item" data-page="me"><span class="icon">👤</span>我的</div>
+</div>
+
+<script>
+// ========== DATA ==========
+var DATA = {"kana": {"hiragana": [{"char": "あ", "romaji": "a", "type": "basic"}, {"char": "い", "romaji": "i", "type": "basic"}, {"char": "う", "romaji": "u", "type": "basic"}, {"char": "え", "romaji": "e", "type": "basic"}, {"char": "お", "romaji": "o", "type": "basic"}, {"char": "か", "romaji": "ka", "type": "basic"}, {"char": "き", "romaji": "ki", "type": "basic"}, {"char": "く", "romaji": "ku", "type": "basic"}, {"char": "け", "romaji": "ke", "type": "basic"}, {"char": "こ", "romaji": "ko", "type": "basic"}, {"char": "さ", "romaji": "sa", "type": "basic"}, {"char": "し", "romaji": "shi", "type": "basic"}, {"char": "す", "romaji": "su", "type": "basic"}, {"char": "せ", "romaji": "se", "type": "basic"}, {"char": "そ", "romaji": "so", "type": "basic"}, {"char": "た", "romaji": "ta", "type": "basic"}, {"char": "ち", "romaji": "chi", "type": "basic"}, {"char": "つ", "romaji": "tsu", "type": "basic"}, {"char": "て", "romaji": "te", "type": "basic"}, {"char": "と", "romaji": "to", "type": "basic"}, {"char": "な", "romaji": "na", "type": "basic"}, {"char": "に", "romaji": "ni", "type": "basic"}, {"char": "ぬ", "romaji": "nu", "type": "basic"}, {"char": "ね", "romaji": "ne", "type": "basic"}, {"char": "の", "romaji": "no", "type": "basic"}, {"char": "は", "romaji": "ha", "type": "basic"}, {"char": "ひ", "romaji": "hi", "type": "basic"}, {"char": "ふ", "romaji": "fu", "type": "basic"}, {"char": "へ", "romaji": "he", "type": "basic"}, {"char": "ほ", "romaji": "ho", "type": "basic"}, {"char": "ま", "romaji": "ma", "type": "basic"}, {"char": "み", "romaji": "mi", "type": "basic"}, {"char": "む", "romaji": "mu", "type": "basic"}, {"char": "め", "romaji": "me", "type": "basic"}, {"char": "も", "romaji": "mo", "type": "basic"}, {"char": "や", "romaji": "ya", "type": "basic"}, {"char": "ゆ", "romaji": "yu", "type": "basic"}, {"char": "よ", "romaji": "yo", "type": "basic"}, {"char": "ら", "romaji": "ra", "type": "basic"}, {"char": "り", "romaji": "ri", "type": "basic"}, {"char": "る", "romaji": "ru", "type": "basic"}, {"char": "れ", "romaji": "re", "type": "basic"}, {"char": "ろ", "romaji": "ro", "type": "basic"}, {"char": "わ", "romaji": "wa", "type": "basic"}, {"char": "を", "romaji": "wo", "type": "basic"}, {"char": "ん", "romaji": "n", "type": "basic"}, {"char": "が", "romaji": "ga", "type": "dakuon"}, {"char": "ぎ", "romaji": "gi", "type": "dakuon"}, {"char": "ぐ", "romaji": "gu", "type": "dakuon"}, {"char": "げ", "romaji": "ge", "type": "dakuon"}, {"char": "ご", "romaji": "go", "type": "dakuon"}, {"char": "ざ", "romaji": "za", "type": "dakuon"}, {"char": "じ", "romaji": "ji", "type": "dakuon"}, {"char": "ず", "romaji": "zu", "type": "dakuon"}, {"char": "ぜ", "romaji": "ze", "type": "dakuon"}, {"char": "ぞ", "romaji": "zo", "type": "dakuon"}, {"char": "だ", "romaji": "da", "type": "dakuon"}, {"char": "ぢ", "romaji": "ji", "type": "dakuon"}, {"char": "づ", "romaji": "zu", "type": "dakuon"}, {"char": "で", "romaji": "de", "type": "dakuon"}, {"char": "ど", "romaji": "do", "type": "dakuon"}, {"char": "ば", "romaji": "ba", "type": "dakuon"}, {"char": "び", "romaji": "bi", "type": "dakuon"}, {"char": "ぶ", "romaji": "bu", "type": "dakuon"}, {"char": "べ", "romaji": "be", "type": "dakuon"}, {"char": "ぼ", "romaji": "bo", "type": "dakuon"}, {"char": "ぱ", "romaji": "pa", "type": "handakuon"}, {"char": "ぴ", "romaji": "pi", "type": "handakuon"}, {"char": "ぷ", "romaji": "pu", "type": "handakuon"}, {"char": "ぺ", "romaji": "pe", "type": "handakuon"}, {"char": "ぽ", "romaji": "po", "type": "handakuon"}, {"char": "きゃ", "romaji": "kya", "type": "yoon"}, {"char": "きゅ", "romaji": "kyu", "type": "yoon"}, {"char": "きょ", "romaji": "kyo", "type": "yoon"}, {"char": "しゃ", "romaji": "sha", "type": "yoon"}, {"char": "しゅ", "romaji": "shu", "type": "yoon"}, {"char": "しょ", "romaji": "sho", "type": "yoon"}, {"char": "ちゃ", "romaji": "cha", "type": "yoon"}, {"char": "ちゅ", "romaji": "chu", "type": "yoon"}, {"char": "ちょ", "romaji": "cho", "type": "yoon"}, {"char": "にゃ", "romaji": "nya", "type": "yoon"}, {"char": "にゅ", "romaji": "nyu", "type": "yoon"}, {"char": "にょ", "romaji": "nyo", "type": "yoon"}, {"char": "ひゃ", "romaji": "hya", "type": "yoon"}, {"char": "ひゅ", "romaji": "hyu", "type": "yoon"}, {"char": "ひょ", "romaji": "hyo", "type": "yoon"}, {"char": "みゃ", "romaji": "mya", "type": "yoon"}, {"char": "みゅ", "romaji": "myu", "type": "yoon"}, {"char": "みょ", "romaji": "myo", "type": "yoon"}, {"char": "りゃ", "romaji": "rya", "type": "yoon"}, {"char": "りゅ", "romaji": "ryu", "type": "yoon"}, {"char": "りょ", "romaji": "ryo", "type": "yoon"}, {"char": "ぎゃ", "romaji": "gya", "type": "yoon"}, {"char": "ぎゅ", "romaji": "gyu", "type": "yoon"}, {"char": "ぎょ", "romaji": "gyo", "type": "yoon"}, {"char": "じゃ", "romaji": "ja", "type": "yoon"}, {"char": "じゅ", "romaji": "ju", "type": "yoon"}, {"char": "じょ", "romaji": "jo", "type": "yoon"}, {"char": "びゃ", "romaji": "bya", "type": "yoon"}, {"char": "びゅ", "romaji": "byu", "type": "yoon"}, {"char": "びょ", "romaji": "byo", "type": "yoon"}, {"char": "ぴゃ", "romaji": "pya", "type": "yoon"}, {"char": "ぴゅ", "romaji": "pyu", "type": "yoon"}, {"char": "ぴょ", "romaji": "pyo", "type": "yoon"}], "katakana": [{"char": "ア", "romaji": "a"}, {"char": "イ", "romaji": "i"}, {"char": "ウ", "romaji": "u"}, {"char": "エ", "romaji": "e"}, {"char": "オ", "romaji": "o"}, {"char": "カ", "romaji": "ka"}, {"char": "キ", "romaji": "ki"}, {"char": "ク", "romaji": "ku"}, {"char": "ケ", "romaji": "ke"}, {"char": "コ", "romaji": "ko"}, {"char": "サ", "romaji": "sa"}, {"char": "シ", "romaji": "shi"}, {"char": "ス", "romaji": "su"}, {"char": "セ", "romaji": "se"}, {"char": "ソ", "romaji": "so"}, {"char": "タ", "romaji": "ta"}, {"char": "チ", "romaji": "chi"}, {"char": "ツ", "romaji": "tsu"}, {"char": "テ", "romaji": "te"}, {"char": "ト", "romaji": "to"}, {"char": "ナ", "romaji": "na"}, {"char": "ニ", "romaji": "ni"}, {"char": "ヌ", "romaji": "nu"}, {"char": "ネ", "romaji": "ne"}, {"char": "ノ", "romaji": "no"}, {"char": "ハ", "romaji": "ha"}, {"char": "ヒ", "romaji": "hi"}, {"char": "フ", "romaji": "fu"}, {"char": "ヘ", "romaji": "he"}, {"char": "ホ", "romaji": "ho"}, {"char": "マ", "romaji": "ma"}, {"char": "ミ", "romaji": "mi"}, {"char": "ム", "romaji": "mu"}, {"char": "メ", "romaji": "me"}, {"char": "モ", "romaji": "mo"}, {"char": "ヤ", "romaji": "ya"}, {"char": "ユ", "romaji": "yu"}, {"char": "ヨ", "romaji": "yo"}, {"char": "ラ", "romaji": "ra"}, {"char": "リ", "romaji": "ri"}, {"char": "ル", "romaji": "ru"}, {"char": "レ", "romaji": "re"}, {"char": "ロ", "romaji": "ro"}, {"char": "ワ", "romaji": "wa"}, {"char": "ヲ", "romaji": "wo"}, {"char": "ン", "romaji": "n"}]}, "levels": {"1": {"name": "入门 N5", "desc": "刚接触日语，从最基础的问候和日常单词开始", "grammar": [{"title": "～は～です（判断句）", "pattern": "A は B です", "meaning": "A 是 B", "example_jp": "私は学生です。", "example_cn": "我是学生。", "note": "「は」读作 wa，表示主题"}, {"title": "～は～ですか（疑问句）", "pattern": "A は B ですか", "meaning": "A 是 B 吗？", "example_jp": "これは本ですか。", "example_cn": "这是书吗？", "note": "句尾加「か」变成疑问句"}, {"title": "～も（也）", "pattern": "A も B です", "meaning": "A 也是 B", "example_jp": "彼も学生です。", "example_cn": "他也是学生。", "note": "「も」代替「は」表示'也'"}, {"title": "～の（所属）", "pattern": "A の B", "meaning": "A 的 B", "example_jp": "私の本です。", "example_cn": "我的书。", "note": "「の」连接两个名词表所属"}, {"title": "これ・それ・あれ", "pattern": "これ/それ/あれ は ～です", "meaning": "这个/那个/那个（远）是～", "example_jp": "それは辞書です。", "example_cn": "那是字典。", "note": "これ（近）/ それ（中）/ あれ（远）"}], "words": [{"jp": "私", "kana": "わたし", "cn": "我", "type": "pronoun"}, {"jp": "あなた", "kana": "あなた", "cn": "你", "type": "pronoun"}, {"jp": "彼", "kana": "かれ", "cn": "他", "type": "pronoun"}, {"jp": "彼女", "kana": "かのじょ", "cn": "她", "type": "pronoun"}, {"jp": "学生", "kana": "がくせい", "cn": "学生", "type": "noun"}, {"jp": "先生", "kana": "せんせい", "cn": "老师", "type": "noun"}, {"jp": "会社員", "kana": "かいしゃいん", "cn": "公司职员", "type": "noun"}, {"jp": "医者", "kana": "いしゃ", "cn": "医生", "type": "noun"}, {"jp": "本", "kana": "ほん", "cn": "书", "type": "noun"}, {"jp": "辞書", "kana": "じしょ", "cn": "字典", "type": "noun"}, {"jp": "新聞", "kana": "しんぶん", "cn": "报纸", "type": "noun"}, {"jp": "携帯電話", "kana": "けいたいでんわ", "cn": "手机", "type": "noun"}, {"jp": "机", "kana": "つくえ", "cn": "桌子", "type": "noun"}, {"jp": "椅子", "kana": "いす", "cn": "椅子", "type": "noun"}, {"jp": "部屋", "kana": "へや", "cn": "房间", "type": "noun"}, {"jp": "学校", "kana": "がっこう", "cn": "学校", "type": "noun"}, {"jp": "駅", "kana": "えき", "cn": "车站", "type": "noun"}, {"jp": "病院", "kana": "びょういん", "cn": "医院", "type": "noun"}, {"jp": "食べ物", "kana": "たべもの", "cn": "食物", "type": "noun"}, {"jp": "飲み物", "kana": "のみもの", "cn": "饮料", "type": "noun"}, {"jp": "水", "kana": "みず", "cn": "水", "type": "noun"}, {"jp": "お茶", "kana": "おちゃ", "cn": "茶", "type": "noun"}, {"jp": "お金", "kana": "おかね", "cn": "钱", "type": "noun"}, {"jp": "時間", "kana": "じかん", "cn": "时间", "type": "noun"}, {"jp": "今日", "kana": "きょう", "cn": "今天", "type": "time"}, {"jp": "明日", "kana": "あした", "cn": "明天", "type": "time"}, {"jp": "昨日", "kana": "きのう", "cn": "昨天", "type": "time"}, {"jp": "朝", "kana": "あさ", "cn": "早上", "type": "time"}, {"jp": "昼", "kana": "ひる", "cn": "中午", "type": "time"}, {"jp": "夜", "kana": "よる", "cn": "晚上", "type": "time"}, {"jp": "大きい", "kana": "おおきい", "cn": "大的", "type": "adj_i"}, {"jp": "小さい", "kana": "ちいさい", "cn": "小的", "type": "adj_i"}, {"jp": "新しい", "kana": "あたらしい", "cn": "新的", "type": "adj_i"}, {"jp": "古い", "kana": "ふるい", "cn": "旧的", "type": "adj_i"}, {"jp": "いい", "kana": "いい", "cn": "好的", "type": "adj_i"}, {"jp": "悪い", "kana": "わるい", "cn": "坏的", "type": "adj_i"}, {"jp": "美味しい", "kana": "おいしい", "cn": "好吃的", "type": "adj_i"}, {"jp": "高い", "kana": "たかい", "cn": "贵的/高的", "type": "adj_i"}, {"jp": "安い", "kana": "やすい", "cn": "便宜的", "type": "adj_i"}, {"jp": "食べる", "kana": "たべる", "cn": "吃", "type": "verb"}, {"jp": "飲む", "kana": "のむ", "cn": "喝", "type": "verb"}, {"jp": "見る", "kana": "みる", "cn": "看", "type": "verb"}, {"jp": "読む", "kana": "よむ", "cn": "读", "type": "verb"}, {"jp": "書く", "kana": "かく", "cn": "写", "type": "verb"}, {"jp": "話す", "kana": "はなす", "cn": "说", "type": "verb"}, {"jp": "聞く", "kana": "きく", "cn": "听/问", "type": "verb"}, {"jp": "行く", "kana": "いく", "cn": "去", "type": "verb"}, {"jp": "来る", "kana": "くる", "cn": "来", "type": "verb"}, {"jp": "する", "kana": "する", "cn": "做", "type": "verb"}]}, "2": {"name": "基础 N4", "desc": "能进行简单日常对话，掌握基本动词变形", "grammar": [{"title": "～てください（请求）", "pattern": "V-て + ください", "meaning": "请做～", "example_jp": "ちょっと待ってください。", "example_cn": "请稍等一下。", "note": "动词て形 + ください 表礼貌请求"}, {"title": "～たい（愿望）", "pattern": "V-ます + たい", "meaning": "想做～", "example_jp": "日本に行きたいです。", "example_cn": "我想去日本。", "note": "ます形去ます + たい"}, {"title": "～たことがある（经验）", "pattern": "V-た + ことがある", "meaning": "做过～（有经验）", "example_jp": "富士山に登ったことがあります。", "example_cn": "我爬过富士山。", "note": "动词た形 + ことがある"}, {"title": "～ないでください（禁止请求）", "pattern": "V-ない + でください", "meaning": "请不要～", "example_jp": "ここで写真を撮らないでください。", "example_cn": "请不要在这里拍照。", "note": "动词ない形 + でください"}, {"title": "～かもしれません（推测）", "pattern": "～かもしれません", "meaning": "可能～", "example_jp": "明日雨かもしれません。", "example_cn": "明天可能下雨。", "note": "简体 + かもしれません"}], "words": [{"jp": "旅行", "kana": "りょこう", "cn": "旅行", "type": "noun"}, {"jp": "天気", "kana": "てんき", "cn": "天气", "type": "noun"}, {"jp": "約束", "kana": "やくそく", "cn": "约定", "type": "noun"}, {"jp": "経験", "kana": "けいけん", "cn": "经验", "type": "noun"}, {"jp": "趣味", "kana": "しゅみ", "cn": "爱好", "type": "noun"}, {"jp": "料理", "kana": "りょうり", "cn": "料理", "type": "noun"}, {"jp": "買い物", "kana": "かいもの", "cn": "购物", "type": "noun"}, {"jp": "散歩", "kana": "さんぽ", "cn": "散步", "type": "noun"}, {"jp": "運動", "kana": "うんどう", "cn": "运动", "type": "noun"}, {"jp": "宿題", "kana": "しゅくだい", "cn": "作业", "type": "noun"}, {"jp": "住所", "kana": "じゅうしょ", "cn": "地址", "type": "noun"}, {"jp": "切符", "kana": "きっぷ", "cn": "票", "type": "noun"}, {"jp": "建物", "kana": "たてもの", "cn": "建筑物", "type": "noun"}, {"jp": "道", "kana": "みち", "cn": "道路", "type": "noun"}, {"jp": "橋", "kana": "はし", "cn": "桥", "type": "noun"}, {"jp": "近く", "kana": "ちかく", "cn": "附近", "type": "noun"}, {"jp": "遠い", "kana": "とおい", "cn": "远的", "type": "adj_i"}, {"jp": "近い", "kana": "ちかい", "cn": "近的", "type": "adj_i"}, {"jp": "速い", "kana": "はやい", "cn": "快的", "type": "adj_i"}, {"jp": "遅い", "kana": "おそい", "cn": "慢的/晚的", "type": "adj_i"}, {"jp": "多い", "kana": "おおい", "cn": "多的", "type": "adj_i"}, {"jp": "少ない", "kana": "すくない", "cn": "少的", "type": "adj_i"}, {"jp": "便利", "kana": "べんり", "cn": "方便", "type": "adj_na"}, {"jp": "有名", "kana": "ゆうめい", "cn": "有名", "type": "adj_na"}, {"jp": "好き", "kana": "すき", "cn": "喜欢", "type": "adj_na"}, {"jp": "嫌い", "kana": "きらい", "cn": "讨厌", "type": "adj_na"}, {"jp": "静か", "kana": "しずか", "cn": "安静", "type": "adj_na"}, {"jp": "賑やか", "kana": "にぎやか", "cn": "热闹", "type": "adj_na"}, {"jp": "大丈夫", "kana": "だいじょうぶ", "cn": "没关系", "type": "adj_na"}, {"jp": "買う", "kana": "かう", "cn": "买", "type": "verb"}, {"jp": "売る", "kana": "うる", "cn": "卖", "type": "verb"}, {"jp": "作る", "kana": "つくる", "cn": "制作", "type": "verb"}, {"jp": "使う", "kana": "つかう", "cn": "使用", "type": "verb"}, {"jp": "会う", "kana": "あう", "cn": "见面", "type": "verb"}, {"jp": "送る", "kana": "おくる", "cn": "送", "type": "verb"}, {"jp": "持つ", "kana": "もつ", "cn": "拿/持有", "type": "verb"}, {"jp": "教える", "kana": "おしえる", "cn": "教", "type": "verb"}, {"jp": "知る", "kana": "しる", "cn": "知道", "type": "verb"}, {"jp": "住む", "kana": "すむ", "cn": "居住", "type": "verb"}, {"jp": "働く", "kana": "はたらく", "cn": "工作", "type": "verb"}, {"jp": "休む", "kana": "やすむ", "cn": "休息", "type": "verb"}, {"jp": "始める", "kana": "はじめる", "cn": "开始", "type": "verb"}, {"jp": "終わる", "kana": "おわる", "cn": "结束", "type": "verb"}, {"jp": "考える", "kana": "かんがえる", "cn": "思考", "type": "verb"}, {"jp": "思う", "kana": "おもう", "cn": "认为", "type": "verb"}, {"jp": "言う", "kana": "いう", "cn": "说", "type": "verb"}, {"jp": "できる", "kana": "できる", "cn": "能/会", "type": "verb"}]}, "3": {"name": "进阶 N3", "desc": "能阅读简单文章，进行较复杂的日常交流", "grammar": [{"title": "～はずだ（应该）", "pattern": "～はずだ", "meaning": "按理说应该～", "example_jp": "彼はもう着いたはずです。", "example_cn": "他按理应该已经到了。", "note": "表示基于客观依据的推测"}, {"title": "～わけではない（并非）", "pattern": "～わけではない", "meaning": "并不是～", "example_jp": "日本語が全然できないわけではありません。", "example_cn": "并不是完全不会日语。", "note": "否定某种推论或误解"}, {"title": "～ようにする（努力做到）", "pattern": "V-る/V-ない + ようにする", "meaning": "努力做到～/尽量不～", "example_jp": "毎日30分勉強するようにしています。", "example_cn": "我尽量每天学习30分钟。", "note": "表示有意识的努力和习惯"}, {"title": "～ことになる（决定/结果）", "pattern": "V-る + ことになる", "meaning": "决定～/结果变成～", "example_jp": "来月東京に転勤することになりました。", "example_cn": "下个月被调去东京了。", "note": "强调客观决定或自然结果"}, {"title": "～させていただく（谦让）", "pattern": "V-させる + ていただく", "meaning": "请允许我～", "example_jp": "自己紹介させていただきます。", "example_cn": "请允许我自我介绍一下。", "note": "自谦语，非常礼貌的表达"}], "words": [{"jp": "社会", "kana": "しゃかい", "cn": "社会", "type": "noun"}, {"jp": "文化", "kana": "ぶんか", "cn": "文化", "type": "noun"}, {"jp": "経済", "kana": "けいざい", "cn": "经济", "type": "noun"}, {"jp": "政治", "kana": "せいじ", "cn": "政治", "type": "noun"}, {"jp": "国際", "kana": "こくさい", "cn": "国际", "type": "noun"}, {"jp": "関係", "kana": "かんけい", "cn": "关系", "type": "noun"}, {"jp": "環境", "kana": "かんきょう", "cn": "环境", "type": "noun"}, {"jp": "状況", "kana": "じょうきょう", "cn": "状况", "type": "noun"}, {"jp": "原因", "kana": "げんいん", "cn": "原因", "type": "noun"}, {"jp": "結果", "kana": "けっか", "cn": "结果", "type": "noun"}, {"jp": "目的", "kana": "もくてき", "cn": "目的", "type": "noun"}, {"jp": "方法", "kana": "ほうほう", "cn": "方法", "type": "noun"}, {"jp": "意見", "kana": "いけん", "cn": "意见", "type": "noun"}, {"jp": "情報", "kana": "じょうほう", "cn": "信息", "type": "noun"}, {"jp": "努力", "kana": "どりょく", "cn": "努力", "type": "noun"}, {"jp": "感動", "kana": "かんどう", "cn": "感动", "type": "noun"}, {"jp": "失礼", "kana": "しつれい", "cn": "失礼", "type": "noun"}, {"jp": "準備", "kana": "じゅんび", "cn": "准备", "type": "noun"}, {"jp": "説明", "kana": "せつめい", "cn": "说明", "type": "noun"}, {"jp": "安心", "kana": "あんしん", "cn": "放心", "type": "noun"}, {"jp": "残念", "kana": "ざんねん", "cn": "遗憾", "type": "adj_na"}, {"jp": "確か", "kana": "たしか", "cn": "确实/大概", "type": "adj_na"}, {"jp": "当然", "kana": "とうぜん", "cn": "当然", "type": "adj_na"}, {"jp": "可能", "kana": "かのう", "cn": "可能", "type": "adj_na"}, {"jp": "複雑", "kana": "ふくざつ", "cn": "复杂", "type": "adj_na"}, {"jp": "簡単", "kana": "かんたん", "cn": "简单", "type": "adj_na"}, {"jp": "突然", "kana": "とつぜん", "cn": "突然", "type": "adj_na"}, {"jp": "自由", "kana": "じゆう", "cn": "自由", "type": "adj_na"}, {"jp": "必要", "kana": "ひつよう", "cn": "必要", "type": "adj_na"}, {"jp": "正しい", "kana": "ただしい", "cn": "正确的", "type": "adj_i"}, {"jp": "難しい", "kana": "むずかしい", "cn": "困难的", "type": "adj_i"}, {"jp": "優しい", "kana": "やさしい", "cn": "温柔的/简单的", "type": "adj_i"}, {"jp": "厳しい", "kana": "きびしい", "cn": "严格的", "type": "adj_i"}, {"jp": "嬉しい", "kana": "うれしい", "cn": "高兴的", "type": "adj_i"}, {"jp": "悲しい", "kana": "かなしい", "cn": "悲伤的", "type": "adj_i"}, {"jp": "怖い", "kana": "こわい", "cn": "可怕的", "type": "adj_i"}, {"jp": "楽しい", "kana": "たのしい", "cn": "快乐的", "type": "adj_i"}, {"jp": "眠い", "kana": "ねむい", "cn": "困的", "type": "adj_i"}, {"jp": "忙しい", "kana": "いそがしい", "cn": "忙碌的", "type": "adj_i"}, {"jp": "危ない", "kana": "あぶない", "cn": "危险的", "type": "adj_i"}, {"jp": "成功する", "kana": "せいこうする", "cn": "成功", "type": "verb"}, {"jp": "失敗する", "kana": "しっぱいする", "cn": "失败", "type": "verb"}, {"jp": "参加する", "kana": "さんかする", "cn": "参加", "type": "verb"}, {"jp": "利用する", "kana": "りようする", "cn": "利用", "type": "verb"}, {"jp": "理解する", "kana": "りかいする", "cn": "理解", "type": "verb"}, {"jp": "変化する", "kana": "へんかする", "cn": "变化", "type": "verb"}, {"jp": "発見する", "kana": "はっけんする", "cn": "发现", "type": "verb"}, {"jp": "想像する", "kana": "そうぞうする", "cn": "想象", "type": "verb"}, {"jp": "約束する", "kana": "やくそくする", "cn": "约定", "type": "verb"}, {"jp": "翻訳する", "kana": "ほんやくする", "cn": "翻译", "type": "verb"}]}}, "dialogues": [{"scene": "初次见面", "level": 1, "lines": [{"jp": "はじめまして。", "cn": "初次见面。", "speaker": "A"}, {"jp": "はじめまして。私は田中です。よろしくお願いします。", "cn": "初次见面，我是田中。请多关照。", "speaker": "B"}, {"jp": "私は李です。こちらこそよろしくお願いします。", "cn": "我是小李。我才是请多关照。", "speaker": "A"}, {"jp": "李さんは学生ですか。", "cn": "小李是学生吗？", "speaker": "B"}, {"jp": "はい、大学生です。田中さんは？", "cn": "是的，我是大学生。田中先生呢？", "speaker": "A"}, {"jp": "私は会社員です。", "cn": "我是公司职员。", "speaker": "B"}]}, {"scene": "购物", "level": 1, "lines": [{"jp": "いらっしゃいませ。", "cn": "欢迎光临。", "speaker": "店员"}, {"jp": "すみません、これはいくらですか。", "cn": "不好意思，这个多少钱？", "speaker": "客人"}, {"jp": "それは500円です。", "cn": "那个500日元。", "speaker": "店员"}, {"jp": "じゃ、これをください。", "cn": "那请给我这个。", "speaker": "客人"}, {"jp": "かしこまりました。袋はご利用ですか。", "cn": "好的。需要袋子吗？", "speaker": "店员"}, {"jp": "はい、お願いします。", "cn": "是的，麻烦您。", "speaker": "客人"}]}, {"scene": "餐厅点餐", "level": 2, "lines": [{"jp": "すみません、メニューを見せてください。", "cn": "不好意思，请给我看一下菜单。", "speaker": "客人"}, {"jp": "はい、どうぞ。お決まりになりましたらお呼びください。", "cn": "好的，请。决定好了请叫我。", "speaker": "店员"}, {"jp": "すみません、注文してもいいですか。", "cn": "不好意思，可以点餐了吗？", "speaker": "客人"}, {"jp": "はい、どうぞ。", "cn": "好的，请说。", "speaker": "店员"}, {"jp": "ラーメンと餃子をお願いします。", "cn": "请来一碗拉面和饺子。", "speaker": "客人"}, {"jp": "かしこまりました。少々お待ちください。", "cn": "好的，请稍等。", "speaker": "店员"}]}, {"scene": "问路", "level": 2, "lines": [{"jp": "すみません、駅はどこですか。", "cn": "不好意思，车站在哪里？", "speaker": "路人"}, {"jp": "この道をまっすぐ行って、二つ目の信号を右に曲がってください。", "cn": "沿着这条路直走，第二个红绿灯右转。", "speaker": "行人"}, {"jp": "ありがとうございます。歩いてどのくらいかかりますか。", "cn": "谢谢。走路大概要多久？", "speaker": "路人"}, {"jp": "そうですね…だいたい10分ぐらいです。", "cn": "嗯…大概10分钟左右。", "speaker": "行人"}, {"jp": "わかりました。助かりました。", "cn": "明白了，帮大忙了。", "speaker": "路人"}]}, {"scene": "预约", "level": 3, "lines": [{"jp": "もしもし、予約をお願いしたいんですが。", "cn": "喂，我想预约一下。", "speaker": "客人"}, {"jp": "かしこまりました。いつのご予約ですか。", "cn": "好的。请问预约什么时间的？", "speaker": "店员"}, {"jp": "今週の土曜日、夜7時に3名でお願いします。", "cn": "这周六晚上7点，3位。", "speaker": "客人"}, {"jp": "申し訳ございません。土曜日の夜は満席となっております。", "cn": "非常抱歉，周六晚上已经满座了。", "speaker": "店员"}, {"jp": "そうですか…じゃ、金曜日の夜はどうですか。", "cn": "这样啊…那周五晚上呢？", "speaker": "客人"}, {"jp": "金曜日でしたら大丈夫です。ご予約を承ります。", "cn": "周五的话没问题。我帮您预约。", "speaker": "店员"}]}]};
+
+
+// ========== SPEECH ==========
+var speechSynth = window.speechSynthesis;
+var speakingEl = null;
+
+function speak(text, btn) {
+  if (!speechSynth) return;
+  speechSynth.cancel();
+  if (speakingEl) speakingEl.classList.remove('speaking');
+  
+  var u = new SpeechSynthesisUtterance(text);
+  u.lang = 'ja-JP';
+  u.rate = 0.85;
+  u.pitch = 1;
+  
+  if (btn) {
+    btn.classList.add('speaking');
+    speakingEl = btn;
+  }
+  
+  u.onend = function() {
+    if (btn) btn.classList.remove('speaking');
+    speakingEl = null;
+  };
+  u.onerror = function() {
+    if (btn) btn.classList.remove('speaking');
+    speakingEl = null;
+  };
+  
+  speechSynth.speak(u);
+}
+
+// Helper: create speak button HTML
+function speakBtnHtml(text) {
+  return '<button class=\'speak-btn\' onclick=\'event.stopPropagation();speak("'+text.replace(/\\/g,'\\\\').replace(/"/g,'\\"').replace(/'/g,"\\'")+'",this)\' title=\'点击发音\'>&#9654;</button>';
+}
+
+// ========== STATE ==========
+var currentLevel = '1';
+var flashLevel = '1';
+var flashIndex = 0;
+var flashWords = [];
+var flashShuffled = [];
+var flashKnown = 0;
+var flashForgot = 0;
+var isFlipped = false;
+var reminderEnabled = false;
+
+// ========== STORAGE ==========
+function loadState() {
+  try {
+    var s = JSON.parse(localStorage.getItem('jp_state') || '{}');
+    return s;
+  } catch(e) { return {}; }
+}
+function saveState(s) {
+  localStorage.setItem('jp_state', JSON.stringify(s));
+}
+var state = loadState();
+if (!state.knownKana) state.knownKana = [];
+if (!state.learnedWords) state.learnedWords = {};
+if (!state.streak) state.streak = 0;
+if (!state.lastStudyDate) state.lastStudyDate = '';
+if (!state.todayCards) state.todayCards = 0;
+if (!state.reminderTime) state.reminderTime = '20:00';
+if (!state.reminderOn) state.reminderOn = false;
+saveState(state);
+
+// Streak
+var today = new Date().toISOString().slice(0,10);
+if (state.lastStudyDate !== today) {
+  var yesterday = new Date(Date.now()-86400000).toISOString().slice(0,10);
+  if (state.lastStudyDate === yesterday) {
+    state.streak = (state.streak||0) + 1;
+  } else if (state.lastStudyDate && state.lastStudyDate !== yesterday) {
+    state.streak = 1;
+  } else if (!state.lastStudyDate) {
+    state.streak = 1;
+  }
+  state.lastStudyDate = today;
+  state.todayCards = 0;
+  saveState(state);
+}
+document.getElementById('streakBadge').textContent = '连续 ' + state.streak + ' 天';
+document.getElementById('statStreak').textContent = state.streak;
+
+// ========== NAVIGATION ==========
+document.querySelectorAll('.nav-item').forEach(function(el) {
+  el.addEventListener('click', function() {
+    var page = this.dataset.page;
+    document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+    this.classList.add('active');
+    document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+    document.getElementById('page-' + page).classList.add('active');
+    if (page === 'dialogue') renderDialogues();
+    if (page === 'me') renderMe();
+  });
+});
+
+// ========== KANA ==========
+var kanaTypes = ['basic','dakuon','handakuon','yoon'];
+var kanaTypeNames = {basic:'清音',dakuon:'浊音',handakuon:'半浊音',yoon:'拗音'};
+var activeKanaType = 'basic';
+
+function renderKanaFilter() {
+  var h = '';
+  kanaTypes.forEach(function(t) {
+    h += '<span class="' + (t===activeKanaType?'active':'') + '" data-type="'+t+'">'+kanaTypeNames[t]+'</span>';
+  });
+  document.getElementById('kanaFilter').innerHTML = h;
+  document.querySelectorAll('#kanaFilter span').forEach(function(s) {
+    s.addEventListener('click', function() {
+      activeKanaType = this.dataset.type;
+      renderKanaFilter();
+      renderKanaGrid();
+    });
+  });
+}
+function renderKanaGrid() {
+  var items = DATA.kana.hiragana.filter(function(k) { return k.type === activeKanaType || (activeKanaType==='basic'&&!k.type); });
+  var h = '';
+  items.forEach(function(k) {
+    var cls = state.knownKana.indexOf(k.char) >= 0 ? ' known' : '';
+    h += '<div class="kana-cell'+cls+'" onclick="toggleKana(\''+k.char+'\',this)"><div class="char">'+k.char+'</div><div class="romaji">'+k.romaji+'</div><button class="speak-btn" onclick="event.stopPropagation();speak(\''+k.char+'\',this)" title="发音">&#9654;</button></div>';
+  });
+  document.getElementById('kanaGrid').innerHTML = h;
+}
+function toggleKana(ch, el) {
+  var idx = state.knownKana.indexOf(ch);
+  if (idx >= 0) { state.knownKana.splice(idx,1); el.classList.remove('known'); }
+  else { state.knownKana.push(ch); el.classList.add('known'); }
+  saveState(state);
+}
+
+// ========== WORDS & GRAMMAR ==========
+function renderLevelSelector(containerId, onChange, selected) {
+  var el = document.getElementById(containerId);
+  var h = '';
+  Object.keys(DATA.levels).forEach(function(lv) {
+    h += '<span class="' + (lv===selected?'active':'') + '" data-level="'+lv+'">'+DATA.levels[lv].name+'</span>';
+  });
+  el.innerHTML = h;
+  el.querySelectorAll('span').forEach(function(s) {
+    s.addEventListener('click', function() {
+      onChange(this.dataset.level);
+      if (containerId === 'levelSelector') { currentLevel = this.dataset.level; renderLearnContent(); }
+      if (containerId === 'flashLevelSelector') { flashLevel = this.dataset.level; initFlash(); }
+      el.querySelectorAll('span').forEach(function(x){x.classList.remove('active')});
+      this.classList.add('active');
+    });
+  });
+}
+
+function renderLearnContent() {
+  var lv = DATA.levels[currentLevel];
+  // words
+  var wc = lv.words.length;
+  var learned = (state.learnedWords[currentLevel]||[]).length;
+  document.getElementById('wordCount').textContent = '已学 ' + learned + ' / ' + wc;
+  var wh = '';
+  lv.words.forEach(function(w) {
+    wh += '<div class="word-item"><div style="display:flex;align-items:center"><span class="word-jp">'+w.jp+'</span><span class="word-kana">'+w.kana+'</span><button class="speak-btn" onclick="event.stopPropagation();speak(\''+w.jp+'\',this)" title="发音">&#9654;</button></div><div><span class="word-cn">'+w.cn+'</span> <span class="word-type">'+w.type+'</span></div></div>';
+  });
+  document.getElementById('wordList').innerHTML = wh;
+  // grammar
+  var gh = '';
+  lv.grammar.forEach(function(g) {
+    gh += '<div class="grammar-item"><div class="pattern">'+g.pattern+'</div><div class="meaning">'+g.meaning+'</div><div class="ex-jp" style="display:flex;align-items:center">'+g.example_jp+'<button class="speak-btn" onclick="event.stopPropagation();speak(\''+g.example_jp+'\',this)" title="发音">&#9654;</button></div><div class="ex-cn">'+g.example_cn+'</div><div class="note">'+g.note+'</div></div>';
+  });
+  document.getElementById('grammarList').innerHTML = gh;
+}
+
+// ========== FLASHCARD ==========
+function initFlash() {
+  var lv = DATA.levels[flashLevel];
+  flashWords = lv.words.slice();
+  flashShuffled = shuffle(flashWords.slice());
+  flashIndex = 0;
+  flashKnown = 0;
+  flashForgot = 0;
+  isFlipped = false;
+  document.getElementById('flashcard').classList.remove('flipped');
+  document.getElementById('knownCount').textContent = '0';
+  document.getElementById('forgotCount').textContent = '0';
+  document.getElementById('flashSpeakBtn').style.display = '';
+  showCard();
+}
+function shuffle(arr) {
+  var a = arr.slice();
+  for (var i = a.length-1; i>0; i--) { var j = Math.floor(Math.random()*(i+1)); var t = a[i]; a[i]=a[j]; a[j]=t; }
+  return a;
+}
+function showCard() {
+  if (flashIndex >= flashShuffled.length) {
+    // round complete
+    document.getElementById('cardJp').textContent = '完成!';
+    document.getElementById('cardKana').textContent = '';
+    document.getElementById('cardCn').textContent = '本轮结束';
+    document.getElementById('cardKanaBack').textContent = '';
+    document.getElementById('flashProgress').textContent = '本轮背诵完成';
+    document.getElementById('flashSpeakBtn').style.display = 'none';
+    var lw = state.learnedWords[flashLevel] || [];
+    flashKnown > 0 && flashShuffled.forEach(function(w) {
+      if (lw.indexOf(w.jp) < 0) lw.push(w.jp);
+    });
+    state.learnedWords[flashLevel] = lw;
+    state.todayCards = (state.todayCards||0) + flashKnown;
+    saveState(state);
+    return;
+  }
+  var w = flashShuffled[flashIndex];
+  document.getElementById('cardJp').textContent = w.jp;
+  document.getElementById('cardKana').textContent = w.kana;
+  document.getElementById('cardCn').textContent = w.cn;
+  document.getElementById('cardKanaBack').textContent = w.kana;
+  document.getElementById('flashProgress').textContent = (flashIndex+1) + ' / ' + flashShuffled.length;
+  isFlipped = false;
+  document.getElementById('flashcard').classList.remove('flipped');
+  document.getElementById('flashSpeakBtn').setAttribute('onclick', 'event.stopPropagation();speak("'+w.jp.replace(/"/g,'&quot;')+'",this)');
+}
+function flipCard() {
+  if (flashIndex >= flashShuffled.length) return;
+  isFlipped = !isFlipped;
+  if (isFlipped) {
+    document.getElementById('flashcard').classList.add('flipped');
+  } else {
+    document.getElementById('flashcard').classList.remove('flipped');
+  }
+}
+function answerCard(known) {
+  if (flashIndex >= flashShuffled.length) return;
+  if (known) flashKnown++; else flashForgot++;
+  document.getElementById('knownCount').textContent = flashKnown;
+  document.getElementById('forgotCount').textContent = flashForgot;
+  flashIndex++;
+  isFlipped = false;
+  document.getElementById('flashcard').classList.remove('flipped');
+  showCard();
+}
+
+// ========== DIALOGUES ==========
+function renderDialogues() {
+  var h = '';
+  DATA.dialogues.forEach(function(d) {
+    var levelName = DATA.levels[d.level] ? DATA.levels[d.level].name : 'N'+(d.level+4);
+    h += '<div class="dialogue-scene"><div class="scene-header"><span>'+d.scene+'</span><span class="level-tag">'+levelName+'</span></div>';
+    d.lines.forEach(function(l) {
+      h += '<div class="dialogue-line"><div class="speaker">'+l.speaker+'</div><div class="content"><div class="jp-text-wrap"><span class="jp-text">'+l.jp+'</span><button class="speak-btn" onclick="event.stopPropagation();speak(\''+l.jp+'\',this)" title="发音">&#9654;</button></div><div class="cn-text">'+l.cn+'</div></div></div>';
+    });
+    h += '</div>';
+  });
+  document.getElementById('page-dialogue').innerHTML = h;
+}
+
+// ========== ME ==========
+function renderMe() {
+  document.getElementById('statStreak').textContent = state.streak;
+  var totalLearned = 0;
+  Object.keys(state.learnedWords||{}).forEach(function(k){ totalLearned += state.learnedWords[k].length; });
+  document.getElementById('statWords').textContent = totalLearned;
+  document.getElementById('statCards').textContent = state.todayCards || 0;
+  document.getElementById('reminderTime').value = state.reminderTime || '20:00';
+  reminderEnabled = state.reminderOn || false;
+  var tog = document.getElementById('reminderToggle');
+  if (reminderEnabled) tog.classList.add('on'); else tog.classList.remove('on');
+}
+
+document.getElementById('reminderTime').addEventListener('change', function() {
+  state.reminderTime = this.value;
+  saveState(state);
+  if (reminderEnabled) scheduleReminder();
+});
+function toggleReminder() {
+  if (!reminderEnabled) {
+    if (Notification && Notification.permission === 'granted') {
+      reminderEnabled = true;
+    } else if (Notification && Notification.permission !== 'denied') {
+      Notification.requestPermission().then(function(p) {
+        if (p === 'granted') { reminderEnabled = true; applyReminderState(); }
+      });
+    }
+  } else {
+    reminderEnabled = false;
+  }
+  applyReminderState();
+}
+function applyReminderState() {
+  state.reminderOn = reminderEnabled;
+  saveState(state);
+  var tog = document.getElementById('reminderToggle');
+  if (reminderEnabled) { tog.classList.add('on'); scheduleReminder(); }
+  else { tog.classList.remove('on'); }
+}
+function scheduleReminder() {
+  // We schedule via setInterval - check every minute if it's reminder time
+  // Store the intent; actual notification fires via interval check
+}
+// Check reminder every minute
+setInterval(function() {
+  if (!state.reminderOn) return;
+  var now = new Date();
+  var hm = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+  if (hm === state.reminderTime && now.getSeconds() < 60) {
+    if (Notification && Notification.permission === 'granted') {
+      new Notification('日语学习提醒', {body:'该学习了！坚持每天进步一点点 ',icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📖</text></svg>',tag:'jp-reminder'});
+    }
+  }
+}, 60000);
+
+// ========== INIT ==========
+renderKanaFilter();
+renderKanaGrid();
+renderLevelSelector('levelSelector', function(lv) { currentLevel = lv; renderLearnContent(); }, '1');
+renderLevelSelector('flashLevelSelector', function(lv) { flashLevel = lv; initFlash(); }, '1');
+renderLearnContent();
+initFlash();
+renderMe();
+
+// Apply saved reminder state
+reminderEnabled = state.reminderOn || false;
+applyReminderState();
+
+// Mark studied today
+if (!state.lastStudyDate || state.lastStudyDate !== today) {
+  state.lastStudyDate = today;
+  saveState(state);
+}
+
+// Hide install hint after first use
+if (state.visited) {
+  var hints = document.querySelectorAll('.install-hint');
+  hints.forEach(function(h) { h.style.display = 'none'; });
+}
+state.visited = true;
+saveState(state);
+</script>
+
+</body>
+</html>
