@@ -130,6 +130,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .loop-play-btn:active{transform:scale(.96)}
 .loop-progress{font-size:12px;color:#999;flex:1;text-align:right}
 
+
+.word-item.speaking{background:#ffebee;border-radius:6px;padding-left:8px;padding-right:8px;transition:background .3s}
+.word-item.speaking .word-jp{color:#e53935;font-weight:700}
+
 </style>
 </head>
 <body>
@@ -248,31 +252,37 @@ var DATA = {"kana": {"hiragana": [{"char": "あ", "romaji": "a", "type": "basic"
 // ========== SPEECH ==========
 var speechSynth = window.speechSynthesis;
 var speakingEl = null;
+var speakingWordEl = null;
 
 function speak(text, btn) {
   if (!speechSynth) return;
   speechSynth.cancel();
   if (speakingEl) speakingEl.classList.remove('speaking');
-  
+  if (speakingWordEl) { speakingWordEl.classList.remove('speaking'); speakingWordEl = null; }
+
   var u = new SpeechSynthesisUtterance(text);
   u.lang = 'ja-JP';
   u.rate = 0.85;
   u.pitch = 1;
-  
+
   if (btn) {
     btn.classList.add('speaking');
     speakingEl = btn;
+    var wi = btn.closest('.word-item');
+    if (wi) { wi.classList.add('speaking'); speakingWordEl = wi; }
   }
-  
+
   u.onend = function() {
+    if (speakingWordEl) { speakingWordEl.classList.remove('speaking'); speakingWordEl = null; }
     if (btn) btn.classList.remove('speaking');
     speakingEl = null;
   };
   u.onerror = function() {
+    if (speakingWordEl) { speakingWordEl.classList.remove('speaking'); speakingWordEl = null; }
     if (btn) btn.classList.remove('speaking');
     speakingEl = null;
   };
-  
+
   speechSynth.speak(u);
 }
 
@@ -306,10 +316,26 @@ function startLoop() {
 function stopLoop() {
   loopPlaying = false;
   speechSynth.cancel();
+  clearWordHighlight();
   var btn = document.getElementById('loopPlayBtn');
   btn.textContent = '循环朗读';
   btn.classList.remove('playing');
   document.getElementById('loopProgress').textContent = '';
+}
+
+function highlightWordByIndex(idx) {
+  var items = document.querySelectorAll('#wordList .word-item');
+  if (speakingWordEl) speakingWordEl.classList.remove('speaking');
+  if (idx >= 0 && idx < items.length) {
+    speakingWordEl = items[idx];
+    speakingWordEl.classList.add('speaking');
+  } else {
+    speakingWordEl = null;
+  }
+}
+
+function clearWordHighlight() {
+  if (speakingWordEl) { speakingWordEl.classList.remove('speaking'); speakingWordEl = null; }
 }
 
 function playNextLoop() {
@@ -322,6 +348,7 @@ function playNextLoop() {
   var text = loopPhase === 'jp' ? w.jp : w.cn;
   var lang = loopPhase === 'jp' ? 'ja-JP' : 'zh-CN';
   
+  highlightWordByIndex(loopIndex);
   document.getElementById('loopProgress').textContent = (loopIndex+1) + '/' + loopWords.length + ' ' + (loopPhase==='jp'?'日语':'中文') + ' - ' + w.jp;
   
   var u = new SpeechSynthesisUtterance(text);
@@ -329,7 +356,7 @@ function playNextLoop() {
   u.rate = loopPhase === 'jp' ? 0.85 : 1.0;
   
   u.onend = function() {
-    if (!loopPlaying) return;
+    if (!loopPlaying) { clearWordHighlight(); return; }
     if (loopPhase === 'jp') {
       loopPhase = 'cn';
       playNextLoop();
@@ -344,8 +371,7 @@ function playNextLoop() {
   };
   
   u.onerror = function() {
-    if (!loopPlaying) return;
-    // skip on error
+    if (!loopPlaying) { clearWordHighlight(); return; }
     if (loopPhase === 'jp') {
       loopPhase = 'cn';
     } else {
