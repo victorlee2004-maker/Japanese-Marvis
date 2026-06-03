@@ -125,9 +125,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 
 .word-loop-bar{display:flex;align-items:center;gap:8px;margin:10px 0}
-.loop-play-btn{padding:8px 16px;border:none;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;background:#e53935;color:#fff}
+.loop-play-btn,.loop-pause-btn{padding:8px 16px;border:none;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s}
+.loop-play-btn{background:#e53935;color:#fff}
 .loop-play-btn.playing{background:#ff9800}
-.loop-play-btn:active{transform:scale(.96)}
+.loop-pause-btn{background:#f5f5f5;color:#666;display:none}
+.loop-pause-btn.show{display:inline-block}
+.loop-pause-btn.paused{background:#4caf50;color:#fff}
+.loop-play-btn:active,.loop-pause-btn:active{transform:scale(.96)}
 .loop-progress{font-size:12px;color:#999;flex:1;text-align:right}
 
 
@@ -159,6 +163,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="sub" id="wordCount"></div>
     <div class="word-loop-bar">
       <button class="loop-play-btn" id="loopPlayBtn" onclick="toggleLoopPlay()">循环朗读</button>
+      <button class="loop-pause-btn" id="loopPauseBtn" onclick="togglePause()">暂停</button>
       <span class="loop-progress" id="loopProgress"></span>
     </div>
     <div id="wordList"></div>
@@ -288,6 +293,7 @@ function speak(text, btn) {
 
 // ========== LOOP PLAY ==========
 var loopPlaying = false;
+var loopPaused = false;
 var loopIndex = 0;
 var loopWords = [];
 var loopPhase = 'jp'; // 'jp' or 'cn'
@@ -305,21 +311,28 @@ function startLoop() {
   loopWords = lv.words.slice();
   if (loopWords.length === 0) return;
   loopPlaying = true;
+  loopPaused = false;
   loopIndex = 0;
   loopPhase = 'jp';
-  var btn = document.getElementById('loopPlayBtn');
-  btn.textContent = '停止';
-  btn.classList.add('playing');
+  document.getElementById('loopPlayBtn').textContent = '停止';
+  document.getElementById('loopPlayBtn').classList.add('playing');
+  var pb = document.getElementById('loopPauseBtn');
+  pb.textContent = '暂停';
+  pb.classList.remove('paused');
+  pb.classList.add('show');
   playNextLoop();
 }
 
 function stopLoop() {
   loopPlaying = false;
+  loopPaused = false;
   speechSynth.cancel();
   clearWordHighlight();
-  var btn = document.getElementById('loopPlayBtn');
-  btn.textContent = '循环朗读';
-  btn.classList.remove('playing');
+  document.getElementById('loopPlayBtn').textContent = '循环朗读';
+  document.getElementById('loopPlayBtn').classList.remove('playing');
+  var pb = document.getElementById('loopPauseBtn');
+  pb.classList.remove('show','paused');
+  pb.textContent = '暂停';
   document.getElementById('loopProgress').textContent = '';
 }
 
@@ -338,8 +351,30 @@ function clearWordHighlight() {
   if (speakingWordEl) { speakingWordEl.classList.remove('speaking'); speakingWordEl = null; }
 }
 
+function togglePause() {
+  if (!loopPlaying) return;
+  if (loopPaused) {
+    // resume
+    loopPaused = false;
+    speechSynth.cancel();
+    var pb = document.getElementById('loopPauseBtn');
+    pb.textContent = '暂停';
+    pb.classList.remove('paused');
+    playNextLoop();
+  } else {
+    // pause
+    loopPaused = true;
+    speechSynth.cancel();
+    if (speakingWordEl) { speakingWordEl.classList.remove('speaking'); speakingWordEl = null; }
+    var pb = document.getElementById('loopPauseBtn');
+    pb.textContent = '继续';
+    pb.classList.add('paused');
+  }
+}
+
 function playNextLoop() {
   if (!loopPlaying) return;
+  if (loopPaused) return;
   if (loopIndex >= loopWords.length) {
     loopIndex = 0;
     loopPhase = 'jp';
